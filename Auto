@@ -1,0 +1,99 @@
+--// UI Setup (Anti-Reset) \--
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.ResetOnSpawn = false 
+ScreenGui.Name = "ManualEquipAura"
+ScreenGui.Parent = game:GetService("CoreGui")
+
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Parent = ScreenGui
+ToggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+ToggleButton.Position = UDim2.new(0.1, 0, 0.2, 0)
+ToggleButton.Size = UDim2.new(0, 110, 0, 45)
+ToggleButton.Text = "Aura: OFF"
+ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleButton.Font = Enum.Font.SourceSansBold
+ToggleButton.TextSize = 18
+
+local Corner = Instance.new("UICorner", ToggleButton)
+Corner.CornerRadius = UDim.new(0, 8)
+
+--// Services & Variables \--
+local range = 45 
+local Toggled = false
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local player = Players.LocalPlayer
+
+--// Toggle Logic \--
+ToggleButton.MouseButton1Click:Connect(function()
+    Toggled = not Toggled
+    ToggleButton.Text = Toggled and "Aura: ON" or "Aura: OFF"
+    ToggleButton.BackgroundColor3 = Toggled and Color3.fromRGB(0, 180, 0) or Color3.fromRGB(180, 0, 0)
+end)
+
+--// UNIVERSAL HIT FUNCTION \--
+local function ForceHitTarget(tool, targetChar)
+    if not tool or not targetChar then return end
+    
+    tool:Activate()
+
+    local toolParts = {}
+    for _, item in pairs(tool:GetDescendants()) do
+        if item:IsA("BasePart") then
+            table.insert(toolParts, item)
+        elseif item:IsA("RemoteEvent") then
+            pcall(function()
+                item:FireServer(targetChar)
+            end)
+        end
+    end
+
+    local targetParts = {
+        targetChar:FindFirstChild("HumanoidRootPart"),
+        targetChar:FindFirstChild("Head"),
+        targetChar:FindFirstChild("Torso") or targetChar:FindFirstChild("UpperTorso")
+    }
+
+    for _, tPart in pairs(targetParts) do
+        if tPart then
+            for _, toolPart in pairs(toolParts) do
+                firetouchinterest(toolPart, tPart, 0)
+                firetouchinterest(toolPart, tPart, 1)
+            end
+        end
+    end
+end
+
+--// MAIN MAX SPEED LOOP (Strict Hand-Equipped Check) \--
+RunService.Stepped:Connect(function()
+    if Toggled then
+        pcall(function()
+            local myChar = player.Character
+            local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
+            if not myRoot then return end
+            
+            -- STRICT CHECK: Sirf tab chalega jab tool seedha CHARACTER ke hath mein ho (Backpack se nahi uthayega)
+            local tool = myChar:FindFirstChildOfClass("Tool")
+            
+            if tool then
+                local allPlayers = Players:GetPlayers()
+                for i = 1, #allPlayers do
+                    local v = allPlayers[i]
+                    
+                    if v ~= player and v.Character and v.Character:FindFirstChild("Humanoid") then
+                        local targetHum = v.Character.Humanoid
+                        local targetRoot = v.Character:FindFirstChild("HumanoidRootPart")
+                        
+                        if targetHum.Health > 0 and targetRoot and not v.Character:FindFirstChildOfClass("ForceField") then
+                            local dist = (myRoot.Position - targetRoot.Position).Magnitude
+                            
+                            if dist <= range then
+                                ForceHitTarget(tool, v.Character)
+                            end
+                        end
+                    end
+                end
+            end
+        end)
+    end
+end)
