@@ -1,0 +1,69 @@
+local ScreenGui = Instance.new("ScreenGui")
+local ToggleButton = Instance.new("TextButton")
+local UICorner = Instance.new("UICorner")
+
+-- Gui Settings
+ScreenGui.Parent = game:GetService("CoreGui") or game.Players.LocalPlayer:WaitForChild("PlayerGui")
+
+ToggleButton.Name = "AutoJumpToggle"
+ToggleButton.Parent = ScreenGui
+ToggleButton.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
+ToggleButton.Position = UDim2.new(0.01, 0, 0.02, 0) -- Top-Left Corner
+ToggleButton.Size = UDim2.new(0, 120, 0, 45)
+ToggleButton.Font = Enum.Font.SourceSansBold
+ToggleButton.Text = "Auto Jump: OFF"
+ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleButton.TextSize = 16.00
+ToggleButton.Active = true
+ToggleButton.Draggable = true
+
+UICorner.CornerRadius = UDim.new(0, 8)
+UICorner.Parent = ToggleButton
+
+-- Fast & Natural Hop Settings
+local autoJumping = false
+local player = game.Players.LocalPlayer
+local customJumpPower = 46 -- Gravity 240 par height 42 ke barabar hi milegi
+local fastGravity = 240     -- Faster fall & landing speed
+local defaultGravity = 196.2
+local defaultJumpPower = 50
+
+ToggleButton.MouseButton1Click:Connect(function()
+	autoJumping = not autoJumping
+	
+	local character = player.Character
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+
+	if autoJumping then
+		ToggleButton.Text = "Auto Jump: ON"
+		ToggleButton.BackgroundColor3 = Color3.fromRGB(60, 255, 60)
+		workspace.Gravity = fastGravity
+	else
+		ToggleButton.Text = "Auto Jump: OFF"
+		ToggleButton.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
+		-- Normal settings reset on OFF
+		workspace.Gravity = defaultGravity
+		if humanoid then
+			humanoid.UseJumpPower = true
+			humanoid.JumpPower = defaultJumpPower
+		end
+	end
+end)
+
+game:GetService("RunService").Heartbeat:Connect(function()
+	if autoJumping then
+		local character = player.Character
+		if character then
+			local humanoid = character:FindFirstChildOfClass("Humanoid")
+			if humanoid and humanoid.Health > 0 then
+				humanoid.UseJumpPower = true
+				humanoid.JumpPower = customJumpPower
+				workspace.Gravity = fastGravity
+				
+				if humanoid.FloorMaterial ~= Enum.Material.Air then
+					humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+				end
+			end
+		end
+	end
+end)
