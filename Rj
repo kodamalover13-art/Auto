@@ -1,0 +1,53 @@
+local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
+local CoreGui = game:GetService("CoreGui")
+local LP = Players.LocalPlayer
+
+-- Agar pehle se UI ho toh hata do
+if CoreGui:FindFirstChild("RealRejoinGui") then
+    CoreGui.RealRejoinGui:Destroy()
+end
+
+-- ScreenGui Setup
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "RealRejoinGui"
+ScreenGui.Parent = (gethui and gethui()) or CoreGui
+
+-- Super Small Draggable Rejoin Button (Top-Right Default Position)
+local RejoinBtn = Instance.new("TextButton")
+RejoinBtn.Name = "RejoinBtn"
+RejoinBtn.Parent = ScreenGui
+RejoinBtn.Size = UDim2.new(0, 45, 0, 25) -- Ekdam chota size
+RejoinBtn.Position = UDim2.new(0.93, 0, 0.02, 0) -- Top-right corner
+RejoinBtn.Text = "RJ"
+RejoinBtn.TextSize = 10
+RejoinBtn.TextColor3 = Color3.new(1, 1, 1)
+RejoinBtn.BackgroundColor3 = Color3.fromRGB(0, 130, 200)
+RejoinBtn.Font = Enum.Font.GothamBold
+RejoinBtn.Active = true
+RejoinBtn.Draggable = true
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 6)
+UICorner.Parent = RejoinBtn
+
+-- Executor queue check
+local queue_script = queue_on_teleport or (syn and syn.queue_on_teleport) or (fluxus and fluxus.queue_on_teleport)
+
+RejoinBtn.MouseButton1Click:Connect(function()
+    RejoinBtn.Text = "..."
+    RejoinBtn.BackgroundColor3 = Color3.fromRGB(200, 100, 0)
+    
+    if queue_script then
+        queue_script([[
+            task.wait(1.5)
+            print("Successfully re-entered the server!")
+        ]])
+    end
+
+    if #Players:GetPlayers() <= 1 then
+        TeleportService:Teleport(game.PlaceId, LP)
+    else
+        TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LP)
+    end
+end)
